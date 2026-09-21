@@ -20,7 +20,9 @@ def run() -> None:
     config = Config.load()
     app = VoiceBridgeApp(config)
 
-    def toggle_listening(icon, item):
+    def toggle_active(icon, item):
+        # Mic and transcription never stop (needed to hear "resume listening");
+        # this only controls whether transcribed speech gets typed anywhere.
         app.set_enabled(not app.enabled)
 
     def toggle_auto_enter(icon, item):
@@ -34,7 +36,7 @@ def run() -> None:
     menu = Menu(
         MenuItem("VoiceBridge", None, enabled=False),
         MenuItem(lambda item: f"Status: {app.status}", None, enabled=False),
-        MenuItem("Listening", toggle_listening, checked=lambda item: app.enabled),
+        MenuItem("Active (not paused)", toggle_active, checked=lambda item: app.enabled),
         MenuItem("Auto-press Enter", toggle_auto_enter, checked=lambda item: app.config.auto_enter),
         MenuItem("Quit", quit_app),
     )

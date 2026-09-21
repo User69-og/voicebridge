@@ -27,7 +27,6 @@ class ContinuousListener:
         self.min_speech_frames = max(1, min_speech_ms // self.FRAME_MS)
         self.calibration_frames = max(1, calibration_ms // self.FRAME_MS)
 
-        self.enabled = True
         self.threshold = 0.02  # overwritten by ambient-noise calibration on start()
 
         self._stream: Optional[sd.InputStream] = None
@@ -65,10 +64,6 @@ class ContinuousListener:
                 ambient = float(np.median(self._ambient_samples))
                 self.threshold = max(ambient * 4.0, 0.01)
                 self._calibrated = True
-            return
-
-        if not self.enabled:
-            self.reset_state()
             return
 
         is_speech = level >= self.threshold

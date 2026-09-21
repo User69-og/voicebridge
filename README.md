@@ -20,9 +20,17 @@ Inspired by a demo of "Infina," rebuilt from scratch for Windows.
    focus — your editor, a chat window, a terminal, Slack, anything — and
    Enter is pressed automatically (configurable).
 
-Runs as a system tray app in the background. Use the tray menu to pause
-listening (e.g. before you say something you don't want typed anywhere) or
-quit.
+Runs as a system tray app in the background. The mic and transcriber never
+stop — that's what lets it hear you resume — but you can pause and resume by
+**voice** at any time:
+
+- Say **"pause listening"** — VoiceBridge keeps listening and transcribing,
+  but stops typing anything anywhere until you resume.
+- Say **"resume listening"** — it starts injecting again.
+
+Neither phrase itself ever gets typed into your focused window. You can also
+toggle the same state from the tray menu ("Active (not paused)") with the
+mouse.
 
 ## Setup
 
@@ -65,9 +73,11 @@ Settings live in `%APPDATA%\VoiceBridge\config.json`:
 
 This exercises the riskiest paths end-to-end: feeding synthetic audio frames
 through the always-listening speech detector to confirm it segments
-utterances correctly without a hotkey, synthesizing speech with the OS TTS
-engine to check transcription round-trips correctly, and opening a real
-Notepad window to verify injected text actually lands there.
+utterances correctly without a hotkey, driving the pause/resume voice-command
+logic to confirm paused speech is swallowed (never typed) while the pause and
+resume phrases themselves are also never typed, synthesizing speech with the
+OS TTS engine to check transcription round-trips correctly, and opening a
+real Notepad window to verify injected text actually lands there.
 
 ## Project layout
 

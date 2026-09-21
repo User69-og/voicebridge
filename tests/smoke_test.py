@@ -87,6 +87,31 @@ def test_vad_auto_segmentation():
     print("[PASS] vad_auto_segmentation")
 
 
+def test_pause_resume_voice_commands():
+    """The mic and transcriber must never stop (that's the only way "resume
+    listening" can ever be heard) — pausing only suppresses injection."""
+    from voicebridge.app import decide_action
+
+    paused = False
+
+    paused, inject = decide_action("hello world", paused)
+    assert inject and not paused, "normal speech should inject while active"
+
+    paused, inject = decide_action("Pause listening.", paused)
+    assert not inject and paused, "the pause phrase itself must not be typed"
+
+    paused, inject = decide_action("are you still there", paused)
+    assert not inject and paused, "speech while paused must be swallowed, not typed"
+
+    paused, inject = decide_action("resume listening", paused)
+    assert not inject and not paused, "the resume phrase itself must not be typed"
+
+    paused, inject = decide_action("hello again", paused)
+    assert inject and not paused, "normal speech should inject again after resuming"
+
+    print("[PASS] pause_resume_voice_commands")
+
+
 def test_transcription_roundtrip():
     from voicebridge.transcriber import Transcriber
 
@@ -155,6 +180,7 @@ def test_text_injection_into_notepad():
 
 if __name__ == "__main__":
     test_vad_auto_segmentation()
+    test_pause_resume_voice_commands()
     test_transcription_roundtrip()
     test_text_injection_into_notepad()
     print("\nAll smoke tests passed.")
