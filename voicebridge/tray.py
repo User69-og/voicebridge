@@ -20,6 +20,9 @@ def run() -> None:
     config = Config.load()
     app = VoiceBridgeApp(config)
 
+    def toggle_listening(icon, item):
+        app.set_enabled(not app.enabled)
+
     def toggle_auto_enter(icon, item):
         app.config.auto_enter = not app.config.auto_enter
         app.config.save()
@@ -30,7 +33,8 @@ def run() -> None:
 
     menu = Menu(
         MenuItem("VoiceBridge", None, enabled=False),
-        MenuItem(lambda item: f"Hotkey: hold [{app.config.hotkey}]", None, enabled=False),
+        MenuItem(lambda item: f"Status: {app.status}", None, enabled=False),
+        MenuItem("Listening", toggle_listening, checked=lambda item: app.enabled),
         MenuItem("Auto-press Enter", toggle_auto_enter, checked=lambda item: app.config.auto_enter),
         MenuItem("Quit", quit_app),
     )

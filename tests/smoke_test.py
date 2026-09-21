@@ -1,5 +1,6 @@
-"""End-to-end smoke tests for VoiceBridge's two riskiest pieces:
-transcription accuracy and text injection into a real foreign window.
+"""End-to-end smoke tests for VoiceBridge's riskiest pieces: automatic
+speech segmentation, transcription accuracy, and text injection into a
+real foreign window.
 Run with the project's venv: .venv/Scripts/python.exe tests/smoke_test.py
 """
 import subprocess
@@ -47,6 +48,43 @@ def _load_wav_as_float32(path: str):
             audio,
         ).astype(np.float32)
     return audio
+
+
+def test_vad_auto_segmentation():
+    """Feeds synthetic frames through the always-listening state machine
+    (silence -> speech -> silence) and checks it fires on_utterance exactly
+    once, with no hotkey or real microphone involved."""
+    import numpy as np
+    from voicebridge.recorder import ContinuousListener
+
+    utterances = []
+    listener = ContinuousListener(
+        on_utterance=lambda audio: utterances.append(audio),
+        sample_rate=16000,
+        silence_ms=300,
+        min_speech_ms=150,
+        calibration_ms=300,
+    )
+
+    rng = np.random.default_rng(0)
+    quiet = lambda: (rng.uniform(-1, 1, listener.frame_samples) * 0.002).astype(np.float32)
+    loud = lambda: (rng.uniform(-1, 1, listener.frame_samples) * 0.5).astype(np.float32)
+
+    for _ in range(listener.calibration_frames + 2):
+        listener.feed_frame(quiet())
+    assert listener._calibrated, "listener should finish ambient-noise calibration"
+
+    for _ in range(15):
+        listener.feed_frame(loud())
+    assert len(utterances) == 0, "should still be mid-utterance, not fired yet"
+
+    for _ in range(listener.silence_frames_needed + 2):
+        listener.feed_frame(quiet())
+
+    assert len(utterances) == 1, f"expected exactly one utterance, got {len(utterances)}"
+    assert utterances[0].size > 0
+    print(f"[vad] captured utterance of {utterances[0].size} samples with no hotkey")
+    print("[PASS] vad_auto_segmentation")
 
 
 def test_transcription_roundtrip():
@@ -116,6 +154,7 @@ def test_text_injection_into_notepad():
 
 
 if __name__ == "__main__":
+    test_vad_auto_segmentation()
     test_transcription_roundtrip()
     test_text_injection_into_notepad()
     print("\nAll smoke tests passed.")

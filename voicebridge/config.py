@@ -8,11 +8,12 @@ CONFIG_PATH = os.path.join(CONFIG_DIR, "config.json")
 
 @dataclass
 class Config:
-    hotkey: str = "f9"
     auto_enter: bool = True
     model_size: str = "base"
     language: str = "en"
     sample_rate: int = 16000
+    silence_ms: int = 700
+    min_speech_ms: int = 250
 
     @classmethod
     def load(cls) -> "Config":
