@@ -40,19 +40,16 @@ mouse.
 ## Get the app
 
 **Option A — download the built app (no Python needed):**
-Grab `VoiceBridge.exe` (with its `_internal` folder — keep them together) and
-run it. It shows up in the system tray. First launch downloads the local
-speech-to-text model (~150MB, one time).
+Grab `VoiceBridge.exe` *and* its `_internal` folder and run the exe. It shows
+up in the system tray. First launch downloads the local speech-to-text model
+(~150MB, one time). See **"Why is there a big `_internal` folder?"** below
+before you move or share the exe anywhere.
 
 **Option B — build it yourself:**
 
 ```powershell
 powershell -File scripts/build_exe.ps1
 ```
-
-This produces `dist\VoiceBridge\VoiceBridge.exe`. Distribute the whole
-`dist\VoiceBridge` folder together — the exe depends on the `_internal`
-folder next to it.
 
 **Option C — run from source** (for development):
 
@@ -61,6 +58,30 @@ python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
 .venv\Scripts\python main.py
 ```
+
+### Why is there a big `_internal` folder?
+
+`VoiceBridge.exe` is not a self-contained file — it's a small launcher
+(~13MB) that expects a sibling folder called `_internal` (~250MB: the Python
+runtime and the speech-recognition libraries) to sit right next to it. If you
+copy or send just the `.exe` on its own, it will fail to start because it
+can't find `_internal`. **The exe and the `_internal` folder always have to
+travel together, in the same folder.**
+
+The build (Option B above) produces exactly this layout, guaranteed to run:
+
+```
+dist\VoiceBridge\
+  VoiceBridge.exe      <- the launcher you run
+  _internal\           <- required — hundreds of files, do not separate from the exe
+    ...
+```
+
+To move, copy, or share VoiceBridge with someone else: take the **entire**
+`dist\VoiceBridge` folder (zip it if you're sending it over the network),
+not just the `.exe` file inside it. Unzip/copy it anywhere, keeping
+`VoiceBridge.exe` and `_internal` as siblings in the same folder, and running
+`VoiceBridge.exe` from there will work.
 
 ## Settings
 
