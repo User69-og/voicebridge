@@ -1,0 +1,4 @@
+-r requirements.txt
+pywinauto>=0.6.8
+pyttsx3>=2.90
+pytest>=8.0.0
