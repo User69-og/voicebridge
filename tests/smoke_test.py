@@ -181,6 +181,36 @@ def test_state_change_hook_drives_tray_icon():
     print("[PASS] state_change_hook_drives_tray_icon")
 
 
+def test_autostart_registry_roundtrip():
+    """Toggling launch-on-startup must actually write/remove the per-user Run
+    registry key, and must leave no trace when disabled again."""
+    from voicebridge import autostart
+
+    was_enabled_before = autostart.is_enabled()
+    try:
+        autostart.set_enabled(True)
+        assert autostart.is_enabled(), "Run key should exist after enabling"
+
+        autostart.set_enabled(False)
+        assert not autostart.is_enabled(), "Run key should be gone after disabling"
+
+        autostart.set_enabled(False)  # disabling twice must not raise
+        print("[PASS] autostart_registry_roundtrip")
+    finally:
+        autostart.set_enabled(was_enabled_before)
+
+
+def test_settings_window_module_loads():
+    """Import-and-shape check for the Settings window (no display interaction
+    performed here — that's exercised manually before packaging a release)."""
+    from voicebridge import settings_window
+
+    assert "en" in settings_window.LANGUAGES
+    assert "base" in settings_window.MODEL_SIZES
+    assert callable(settings_window.open_settings)
+    print("[PASS] settings_window_module_loads")
+
+
 def test_transcription_roundtrip():
     from voicebridge.transcriber import Transcriber
 
@@ -251,6 +281,8 @@ if __name__ == "__main__":
     test_vad_auto_segmentation()
     test_pause_resume_voice_commands()
     test_state_change_hook_drives_tray_icon()
+    test_autostart_registry_roundtrip()
+    test_settings_window_module_loads()
     test_transcription_roundtrip()
     test_text_injection_into_notepad()
     print("\nAll smoke tests passed.")

@@ -3,6 +3,7 @@ from pystray import Icon, Menu, MenuItem
 
 from .app import VoiceBridgeApp
 from .config import Config
+from .settings_window import open_settings
 
 _ACTIVE_COLOR = (255, 90, 45, 255)    # orange: listening and acting on speech
 _PAUSED_COLOR = (120, 120, 120, 255)  # gray: still listening, not acting (also used while starting)
@@ -56,6 +57,13 @@ def run() -> None:
         app.config.auto_enter = not app.config.auto_enter
         app.config.save()
 
+    def show_settings(icon, item):
+        def on_save():
+            app.apply_live_settings()
+            sync_icon()
+
+        open_settings(app.config, on_save=on_save)
+
     def quit_app(icon, item):
         app.stop()
         icon.stop()
@@ -75,6 +83,7 @@ def run() -> None:
             enabled=lambda item: app.status != "error",
         ),
         MenuItem("Auto-press Enter", toggle_auto_enter, checked=lambda item: app.config.auto_enter),
+        MenuItem("Settings...", show_settings),
         MenuItem("Quit", quit_app),
     )
 

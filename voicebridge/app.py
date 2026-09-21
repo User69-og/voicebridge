@@ -130,3 +130,13 @@ class VoiceBridgeApp:
 
     def stop(self) -> None:
         self.listener.stop()
+
+    def apply_live_settings(self) -> None:
+        """Re-reads speech-detection sensitivity from self.config without a
+        restart. Called after the Settings window saves changes."""
+        self.listener.silence_frames_needed = max(
+            1, self.config.silence_ms // self.listener.FRAME_MS
+        )
+        self.listener.min_speech_frames = max(
+            1, self.config.min_speech_ms // self.listener.FRAME_MS
+        )
