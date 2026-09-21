@@ -112,6 +112,75 @@ def test_pause_resume_voice_commands():
     print("[PASS] pause_resume_voice_commands")
 
 
+def test_state_change_hook_drives_tray_icon():
+    """Every state transition VoiceBridge can reach (starting -> listening,
+    pause/resume, and setup failures) must fire on_state_change exactly the
+    way the tray icon relies on to pick its color: active/paused/error."""
+    import voicebridge.app as appmod
+    from voicebridge.config import Config
+
+    # 1. model load failure -> error state, callback fires, listener never starts
+    class ExplodingTranscriber:
+        def __init__(self, *a, **kw):
+            raise RuntimeError("no such model")
+
+    real_transcriber_cls = appmod.Transcriber
+    appmod.Transcriber = ExplodingTranscriber
+    try:
+        app = appmod.VoiceBridgeApp(Config())
+        events = []
+        app.on_state_change = lambda: events.append(app.status)
+        app.start()
+        assert app.status == "error", app.status
+        assert app.error and "no such model" in app.error, app.error
+        assert events == ["error"], events
+        assert app.listener._stream is None, "mic must never start after a model-load failure"
+    finally:
+        appmod.Transcriber = real_transcriber_cls
+    print("[PASS] error state on model-load failure")
+
+    # 2. microphone failure -> error state, callback fires
+    class StubTranscriber:
+        def __init__(self, *a, **kw):
+            pass
+
+    appmod.Transcriber = StubTranscriber
+    try:
+        app = appmod.VoiceBridgeApp(Config())
+
+        def boom():
+            raise OSError("no default input device")
+
+        app.listener.start = boom
+        events = []
+        app.on_state_change = lambda: events.append(app.status)
+        app.start()
+        assert app.status == "error", app.status
+        assert "no default input device" in app.error, app.error
+        assert events == ["error"], events
+    finally:
+        appmod.Transcriber = real_transcriber_cls
+    print("[PASS] error state on microphone failure")
+
+    # 3. once in error state, manual pause/resume toggling from the tray is a no-op
+    app.set_enabled(True)
+    assert app.status == "error", "toggling must not clear an error state"
+
+    # 4. normal pause/resume still fires the hook so the icon can flip
+    appmod.Transcriber = StubTranscriber
+    try:
+        app2 = appmod.VoiceBridgeApp(Config())
+        app2.transcriber = StubTranscriber()
+        events2 = []
+        app2.on_state_change = lambda: events2.append((app2.status, app2.paused))
+        app2.set_enabled(False)
+        app2.set_enabled(True)
+        assert events2 == [("paused", True), ("listening", False)], events2
+    finally:
+        appmod.Transcriber = real_transcriber_cls
+    print("[PASS] state_change_hook_drives_tray_icon")
+
+
 def test_transcription_roundtrip():
     from voicebridge.transcriber import Transcriber
 
@@ -181,6 +250,7 @@ def test_text_injection_into_notepad():
 if __name__ == "__main__":
     test_vad_auto_segmentation()
     test_pause_resume_voice_commands()
+    test_state_change_hook_drives_tray_icon()
     test_transcription_roundtrip()
     test_text_injection_into_notepad()
     print("\nAll smoke tests passed.")
